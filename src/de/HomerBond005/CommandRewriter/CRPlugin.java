@@ -25,31 +25,8 @@ public class CRPlugin extends JavaPlugin implements Listener{
 	@Override
 	public void onEnable(){
 		log = getLogger();
-		getConfig().addDefault("Commands", new HashMap<String, String>());
-		getConfig().options().copyDefaults(true);
-		saveConfig();
-		reloadConfig();
-		commands = new HashMap<String, String>();
-		Set<String> commandset = getConfig().getConfigurationSection("Commands").getKeys(false);
-		for(String command : commandset){
-			commands.put(command.toLowerCase(), getConfig().getString("Commands."+command));
-		}
+		reload();
 		getServer().getPluginManager().registerEvents(this, this);
-		pc = new PermissionsChecker(this, true);
-		try {
-			metrics = new Metrics(this);
-		    Graph graphabbr = metrics.createGraph("Defined texts");
-		    graphabbr.addPlotter(new Metrics.Plotter(""+commands.size()){
-		            @Override
-		            public int getValue() {
-		                    return 1;
-		            }
-
-		    });
-			metrics.start();
-		} catch (IOException e) {
-			log.warning("Error while enabling Metrics!");
-		}
 		log.info("is enabled.");
 	}
 	
@@ -114,6 +91,10 @@ public class CRPlugin extends JavaPlugin implements Listener{
 						player.sendMessage(ChatColor.RED+"Use: /cr remove <command>");
 				}else
 					player.sendMessage(ChatColor.RED+"You do not have the required permission!");
+			}else if(args[0].equalsIgnoreCase("reload")){
+				reload();
+				log.info("has been reloaded.");
+				player.sendMessage(ChatColor.GREEN+"CommandRewriter has been successfully reloaded.");
 			}else{
 				player.sendMessage(ChatColor.RED+"See /cr help for help.");
 			}
@@ -128,6 +109,33 @@ public class CRPlugin extends JavaPlugin implements Listener{
 			for(String line : commands.get(first).split("\\|"))
 				event.getPlayer().sendMessage(fm(line));
 			event.setCancelled(true);
+		}
+	}
+	
+	private void reload(){
+		getConfig().addDefault("Commands", new HashMap<String, String>());
+		getConfig().options().copyDefaults(true);
+		saveConfig();
+		reloadConfig();
+		commands = new HashMap<String, String>();
+		Set<String> commandset = getConfig().getConfigurationSection("Commands").getKeys(false);
+		for(String command : commandset){
+			commands.put(command.toLowerCase(), getConfig().getString("Commands."+command));
+		}
+		pc = new PermissionsChecker(this, true);
+		try {
+			metrics = new Metrics(this);
+		    Graph graphabbr = metrics.createGraph("Defined texts");
+		    graphabbr.addPlotter(new Metrics.Plotter(""+commands.size()){
+		            @Override
+		            public int getValue() {
+		                    return 1;
+		            }
+
+		    });
+			metrics.start();
+		} catch (IOException e) {
+			log.warning("Error while enabling Metrics!");
 		}
 	}
 	
