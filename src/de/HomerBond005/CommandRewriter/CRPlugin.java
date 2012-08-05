@@ -52,6 +52,7 @@ public class CRPlugin extends JavaPlugin implements Listener{
 				player.sendMessage(ChatColor.GOLD+"/cr set <command> <text>"+ChatColor.GRAY+" Assign a text to a command.");
 				player.sendMessage(ChatColor.GOLD+"/cr list"+ChatColor.GRAY+" List all set commands");
 				player.sendMessage(ChatColor.GOLD+"/cr remove <command>"+ChatColor.GRAY+ "Unassign a text from a command.");
+				player.sendMessage(ChatColor.GOLD+"/cr reload"+ChatColor.GRAY+ "Reload the config.");
 				player.sendMessage(ChatColor.GRAY+"You can use color codes like "+ChatColor.GOLD+"&6"+ChatColor.GRAY+" in the texts.");
 				player.sendMessage(ChatColor.GRAY+"The symbol "+ChatColor.GOLD+"|"+ChatColor.GRAY+" will be parsed as new line.");
 			}else if(args[0].equalsIgnoreCase("set")){
@@ -92,9 +93,12 @@ public class CRPlugin extends JavaPlugin implements Listener{
 				}else
 					player.sendMessage(ChatColor.RED+"You do not have the required permission!");
 			}else if(args[0].equalsIgnoreCase("reload")){
-				reload();
-				log.info("has been reloaded.");
-				player.sendMessage(ChatColor.GREEN+"CommandRewriter has been successfully reloaded.");
+				if(pc.has(player, "CommandRewriter.remove")){
+					reload();
+					log.info("has been reloaded.");
+					player.sendMessage(ChatColor.GREEN+"CommandRewriter has been successfully reloaded.");
+				}else
+					player.sendMessage(ChatColor.RED+"You do not have the required permission!");
 			}else{
 				player.sendMessage(ChatColor.RED+"See /cr help for help.");
 			}
