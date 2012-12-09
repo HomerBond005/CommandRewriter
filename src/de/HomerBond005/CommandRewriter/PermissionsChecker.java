@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.milkbowl.vault.permission.Permission;
 import org.anjocaido.groupmanager.GroupManager;
+import org.anjocaido.groupmanager.permissions.AnjoPermissionsHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -24,7 +25,7 @@ import de.bananaco.bpermissions.api.util.CalculableType;
 
 /**
  * Class to check permission nodes. Supports: Vault, PermissionsEx, bPermissions, GroupManager and BukkitPermissions
- * @version v1.1
+ * @version v1.1.1
  * @author HomerBond005
  */
 public class PermissionsChecker{
@@ -80,7 +81,11 @@ public class PermissionsChecker{
     	}else if(permSys == 3){
     		return ApiLayer.hasPermission(player.getWorld().getName(), CalculableType.USER, player.getName(), perm);
     	}else if(permSys == 4){
-    		return groupManager.getWorldsHolder().getWorldPermissionsByPlayerName(player.getName()).permission(player, perm);
+    		AnjoPermissionsHandler holder = groupManager.getWorldsHolder().getWorldPermissions(player);
+			if (holder == null) {
+	            return false;
+	        }
+	        return holder.has(player, perm);
     	}else if(permSys == 5){
     		return vault.has(player, perm);
     	}else{

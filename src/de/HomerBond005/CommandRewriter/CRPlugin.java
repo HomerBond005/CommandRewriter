@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import de.HomerBond005.CommandRewriter.Metrics.Graph;
@@ -21,12 +22,17 @@ public class CRPlugin extends JavaPlugin implements Listener{
 	private Logger log;
 	private HashMap<String, String> commands;
 	private Metrics metrics;
+	private Updater updater;
+	private HashMap<Player, String> creators;
 	
 	@Override
 	public void onEnable(){
 		log = getLogger();
+		creators = new HashMap<Player, String>();
 		reload();
 		getServer().getPluginManager().registerEvents(this, this);
+		updater = new Updater(this, getConfig().getBoolean("updateReminderEnabled", true));
+		getServer().getPluginManager().registerEvents(updater, this);
 		log.info("is enabled.");
 	}
 	
@@ -49,7 +55,7 @@ public class CRPlugin extends JavaPlugin implements Listener{
 				args = new String[]{"help"};
 			if(args[0].equalsIgnoreCase("help")){
 				player.sendMessage(ChatColor.GOLD+""+ChatColor.BOLD+"CommandRewriter: Help");
-				player.sendMessage(ChatColor.GOLD+"/cr set <command> <text>"+ChatColor.GRAY+" Assign a text to a command.");
+				player.sendMessage(ChatColor.GOLD+"/cr set <command>"+ChatColor.GRAY+" Start the rewrite assistent to the given command.");
 				player.sendMessage(ChatColor.GOLD+"/cr list"+ChatColor.GRAY+" List all set commands");
 				player.sendMessage(ChatColor.GOLD+"/cr remove <command>"+ChatColor.GRAY+ "Unassign a text from a command.");
 				player.sendMessage(ChatColor.GOLD+"/cr reload"+ChatColor.GRAY+ "Reload the config.");
@@ -57,17 +63,16 @@ public class CRPlugin extends JavaPlugin implements Listener{
 				player.sendMessage(ChatColor.GRAY+"The symbol "+ChatColor.GOLD+"|"+ChatColor.GRAY+" will be parsed as new line.");
 			}else if(args[0].equalsIgnoreCase("set")){
 				if(pc.has(player, "CommandRewriter.set")){
-					if(args.length >= 3){
-						String text = "";
-						for(int i = 2; i < args.length; i++){
-							text += args[i]+" ";
+					if(args.length >= 2){
+						String com = "";
+						for(int i = 1; i < args.length; i++){
+							com += args[i]+" ";
 						}
-						getConfig().set("Commands."+args[1], text);
-						saveConfig();
-						commands.put(args[1].toLowerCase(), text);
-						player.sendMessage(ChatColor.GREEN+"Successfully assigned the text to the command '"+args[1]+"'.");
+						creators.put(player, com.trim().toLowerCase());
+						player.sendMessage(ChatColor.GREEN+"Now type the message that should be assigned to the command.");
+						player.sendMessage(ChatColor.GREEN+"Type !abort to abort");
 					}else
-						player.sendMessage(ChatColor.RED+"Use: /cr set <command> <text>");
+						player.sendMessage(ChatColor.RED+"Use: /cr set <command>");
 				}else
 					player.sendMessage(ChatColor.RED+"You do not have the required permission!");
 			}else if(args[0].equalsIgnoreCase("list")){
@@ -93,7 +98,7 @@ public class CRPlugin extends JavaPlugin implements Listener{
 				}else
 					player.sendMessage(ChatColor.RED+"You do not have the required permission!");
 			}else if(args[0].equalsIgnoreCase("reload")){
-				if(pc.has(player, "CommandRewriter.remove")){
+				if(pc.has(player, "CommandRewriter.reload")){
 					reload();
 					log.info("has been reloaded.");
 					player.sendMessage(ChatColor.GREEN+"CommandRewriter has been successfully reloaded.");
@@ -106,11 +111,46 @@ public class CRPlugin extends JavaPlugin implements Listener{
 		return true;
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onPlayerChat(AsyncPlayerChatEvent event){
+		Player player = event.getPlayer();
+		if(creators.containsKey(player)){
+			if(event.getMessage().equalsIgnoreCase("!abort")){
+				player.sendMessage(ChatColor.RED+"You have aborted the CommandRewriter assistent.");
+			}else{
+				String command = creators.get(player).toLowerCase();
+				String message = event.getMessage();
+				if(commands.containsKey(command)){
+					player.sendMessage(ChatColor.RED+"The command '"+command+"' is already rewritten.");
+					player.sendMessage(ChatColor.RED+"The value text will be overwritten with your one.");
+				}
+				commands.put(command, message);
+				getConfig().set("Commands."+(command.replace(' ', ' ')), message);
+				saveConfig();
+				player.sendMessage(ChatColor.GREEN+"Successfully assigned the text to the command '"+command+"'.");
+			}
+			creators.remove(player);
+			event.setCancelled(true);
+		}
+	}
+	
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event){
-		String first = event.getMessage().replaceFirst("/", "").split(" ")[0].toLowerCase();
-		if(commands.containsKey(first)){
-			for(String line : commands.get(first).split("\\|"))
+		String[] parts = event.getMessage().trim().replaceFirst("/", "").toLowerCase().split(" ");
+		String matching = "";
+		for(int i = parts.length; i > 0; i--){
+			String check = "";
+			for(int w = 0; w < i; w++){
+				check += parts[w] + " ";
+			}
+			check = check.trim();
+			if(commands.containsKey(check)){
+				matching = check;
+				break;
+			}
+		}
+		if(!matching.equals("")){
+			for(String line : commands.get(matching).split("\\|"))
 				event.getPlayer().sendMessage(fm(line));
 			event.setCancelled(true);
 		}
@@ -118,6 +158,7 @@ public class CRPlugin extends JavaPlugin implements Listener{
 	
 	private void reload(){
 		getConfig().addDefault("Commands", new HashMap<String, String>());
+		getConfig().addDefault("updateReminderEnabled", true);
 		getConfig().options().copyDefaults(true);
 		saveConfig();
 		reloadConfig();
