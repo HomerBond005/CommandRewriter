@@ -85,12 +85,17 @@ public class CRPlugin extends JavaPlugin implements Listener{
 					player.sendMessage(ChatColor.RED+"You do not have the required permission!");
 			}else if(args[0].equalsIgnoreCase("remove")){
 				if(pc.has(player, "CommandRewriter.remove")){
-					if(args.length == 2){
-						if(commands.containsKey(args[1].toLowerCase())){
-							commands.remove(args[1].toLowerCase());
-							getConfig().set("Commands."+args[1], null);
+					if(args.length >= 2){
+						String com = "";
+						for(int i = 1; i < args.length; i++){
+							com += args[i]+" ";
+						}
+						com = com.trim();
+						if(commands.containsKey(com.toLowerCase())){
+							commands.remove(com.toLowerCase());
+							getConfig().set("Commands."+com, null);
 							saveConfig();
-							player.sendMessage(ChatColor.GREEN+"Successfully remove the command '"+args[1]+"' from the CommandRewriter list.");
+							player.sendMessage(ChatColor.GREEN+"Successfully remove the command '"+com+"' from the CommandRewriter list.");
 						}else
 							player.sendMessage(ChatColor.RED+"The command '"+args[1]+"' is not used in CommandRewriter!");
 					}else
@@ -157,6 +162,7 @@ public class CRPlugin extends JavaPlugin implements Listener{
 	}
 	
 	private void reload(){
+		reloadConfig();
 		getConfig().addDefault("Commands", new HashMap<String, String>());
 		getConfig().addDefault("updateReminderEnabled", true);
 		getConfig().options().copyDefaults(true);
