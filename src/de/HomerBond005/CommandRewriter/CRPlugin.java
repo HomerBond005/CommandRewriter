@@ -191,6 +191,6 @@ public class CRPlugin extends JavaPlugin implements Listener{
 	}
 	
 	private String fm(String t){
-		return t.replaceAll("(&([a-f0-9]))", "\u00A7$2");
+		return ChatColor.translateAlternateColorCodes('&', t);
 	}
 }
