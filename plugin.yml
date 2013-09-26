@@ -1,7 +1,7 @@
 name: CommandRewriter
 main: de.HomerBond005.CommandRewriter.CRPlugin
 author: HomerBond005
-version: 1.2.2
+version: '@PROJECT_VERSION@'
 commands:
     cr:
         description: Rewrite commands

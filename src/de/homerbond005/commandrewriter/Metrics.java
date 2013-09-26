@@ -1,4 +1,4 @@
-package de.HomerBond005.CommandRewriter;
+package de.homerbond005.commandrewriter;
 /*
  * Copyright 2011 Tyler Blair. All rights reserved.
  *
