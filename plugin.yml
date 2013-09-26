@@ -1,5 +1,5 @@
 name: CommandRewriter
-main: de.HomerBond005.CommandRewriter.CRPlugin
+main: de.homerbond005.commandrewriter.CRPlugin
 author: HomerBond005
 version: '@PROJECT_VERSION@'
 commands:
