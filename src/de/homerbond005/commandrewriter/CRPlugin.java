@@ -16,8 +16,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.mcstats.Metrics;
-import org.mcstats.Metrics.Graph;
+import de.homerbond005.commandrewriter.lib.org.mcstats.Metrics;
+import de.homerbond005.commandrewriter.lib.org.mcstats.Metrics.Graph;
 
 public class CRPlugin extends JavaPlugin implements Listener {
 	private Logger log;
