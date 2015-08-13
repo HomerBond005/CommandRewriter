@@ -5,6 +5,7 @@ import de.homerbond005.commandrewriter.lib.org.mcstats.Metrics.Graph;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -14,11 +15,8 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 public class CRPlugin extends JavaPlugin implements Listener {
@@ -135,11 +133,11 @@ public class CRPlugin extends JavaPlugin implements Listener {
 
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
-		String msg = event.getMessage().trim().toLowerCase();
-		if (msg.startsWith("/")) {
-			msg = msg.substring(1);
+		String standardizedMessage = event.getMessage().trim().toLowerCase();
+		if (standardizedMessage.startsWith("/")) {
+			standardizedMessage = standardizedMessage.substring(1);
 		}
-		String[] parts = msg.split(" ");
+		String[] parts = standardizedMessage.split(" ");
 		String matching = "";
 		for (int i = parts.length; i > 0; i--) {
 			String check = "";
@@ -153,8 +151,18 @@ public class CRPlugin extends JavaPlugin implements Listener {
 			}
 		}
 		if (!matching.isEmpty()) {
-			for (String line : commands.get(matching).split("\\|"))
-				event.getPlayer().sendMessage(colorCodes(line));
+			List<String> msgs = Arrays.asList(commands.get(matching).split("\\|"));
+			CommandRewriteEvent evt = new CommandRewriteEvent(event, event.getMessage(), matching, msgs);
+			getServer().getPluginManager().callEvent(evt);
+			if (evt.isCancelled()) {
+				return;
+			}
+			msgs = evt.getMessageToSend();
+			if (msgs != null) {
+				for (String line : msgs) {
+					event.getPlayer().sendMessage(colorCodes(line));
+				}
+			}
 			event.setCancelled(true);
 		}
 	}
@@ -165,14 +173,15 @@ public class CRPlugin extends JavaPlugin implements Listener {
 		getConfig().options().copyDefaults(true);
 		saveConfig();
 		commands = new HashMap<>();
-		Set<String> commandset = getConfig().getConfigurationSection("Commands").getKeys(false);
-		for (String command : commandset) {
-			commands.put(command.toLowerCase(), getConfig().getString("Commands." + command));
+		ConfigurationSection commandsCfgSection = getConfig().getConfigurationSection("Commands");
+		Set<String> commandSet = commandsCfgSection.getKeys(false);
+		for (String command : commandSet) {
+			commands.put(command.toLowerCase(), commandsCfgSection.getString(command));
 		}
 		try {
 			Metrics metrics = new Metrics(this);
 			Graph graphabbr = metrics.createGraph("Defined texts");
-			graphabbr.addPlotter(new Metrics.Plotter("" + commands.size()) {
+			graphabbr.addPlotter(new Metrics.Plotter(Integer.toString(commands.size())) {
 				@Override
 				public int getValue() {
 					return 1;
